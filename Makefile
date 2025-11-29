@@ -29,7 +29,7 @@ LIBS     := -lreadline -ldl
 LDFLAGS := -O2 $(LDFLAGS) $(LIBS)
 
 # Execute parameters
-ARGS    ?= -l /home/zeehlin/Ass-Igned/ass.log
+ARGS    ?= -l $(ASS_HOME)/ass.log
 ASS_EXEC := $(BINARY) $(ARGS)
 ifdef mainargs
 ASS_EXEC  += $(mainargs)
