@@ -118,7 +118,14 @@ static int cmd_task(char *args) {
 static int subcmd_task_add(char *args) {
   SAFE_FREE(answer);
 
-  answer = aic_call(aic_task_add_prompt(args));
+  char* prompt = NULL;
+  prompt = aic_task_add_prompt(args);
+  if (prompt == NULL) {
+    Log("Failed to build prompt");
+    return -1;
+  }
+
+  answer = aic_call(prompt);
 
   if (answer == NULL) {
     Log("AI task add error");
@@ -127,6 +134,7 @@ static int subcmd_task_add(char *args) {
   _Log("%s\n", answer);
 
   SAFE_FREE(answer);
+  free(prompt);
   return 0;
 }
 
