@@ -1,7 +1,7 @@
 #include <getopt.h>
-#include <stdlib.h>
 #include "common.h"
 #include "monitor.h"
+#include "ai_client.h"
 
 void adb_init();
 
@@ -39,6 +39,7 @@ void monitor_init(int argc, char *argv[]) {
   parse_args(argc, argv);
   log_init(log_file);
   adb_init();
+  Assert(aic_init() == 0, "AI Client init error.");
   welcome();
 }
 
@@ -55,5 +56,6 @@ void monitor_cleanup() {
     case ASS_QUIT: log_statistic();
   }
 
+  aic_cleanup();
   log_close();
 }

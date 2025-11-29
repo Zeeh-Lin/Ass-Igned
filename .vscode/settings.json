@@ -11,6 +11,8 @@
     "stdint.h": "c",
     "cstdint": "c",
     "monitor.h": "c",
-    "adb.h": "c"
+    "adb.h": "c",
+    "cjson.h": "c",
+    "ai_client.h": "c"
   }
 }

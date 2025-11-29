@@ -1,13 +1,12 @@
 .DEFAULT_GOAL = app
 
 # --- Paths ---
-WORK_DIR  = $(shell pwd)
-BUILD_DIR = $(WORK_DIR)/build
+BUILD_DIR = $(ASS_HOME)/build
 
 NAME      = ass
 BINARY    = $(BUILD_DIR)/$(NAME)
 
-INC_PATH  = $(WORK_DIR)/include
+INC_PATH  = $(ASS_HOME)/include
 OBJ_DIR   = $(BUILD_DIR)/obj
 
 # --- Sources & Objects ---
@@ -23,16 +22,16 @@ LD       = $(CC)
 
 # CFLAGS: Optimization (-O2), Dependency generation (-MMD), Strict warnings (-Wall), 
 # Treat warnings as errors (-Werror), Debug info (-g), Include paths
-INCLUDES = -I $(INC_PATH)
-CFLAGS  := -O2 -MMD -Wall -Werror $(INCLUDES) -g $(CFLAGS)
-LIBS     := -lreadline -ldl 
-LDFLAGS := -O2 $(LDFLAGS) $(LIBS)
+INCLUDES  = -I $(INC_PATH)
+CFLAGS   := -O2 -MMD -Wall -Werror $(INCLUDES) -g $(CFLAGS)
+LIBS     := -lreadline -ldl -lcurl
+LDFLAGS  := -O2 $(LDFLAGS) $(LIBS)
 
 # Execute parameters
-ARGS    ?= -l $(ASS_HOME)/ass.log
+ARGS     ?= -l $(BUILD_DIR)/ass.log
 ASS_EXEC := $(BINARY) $(ARGS)
 ifdef mainargs
-ASS_EXEC  += $(mainargs)
+ASS_EXEC += $(mainargs)
 endif
 
 # --- Rules ---
