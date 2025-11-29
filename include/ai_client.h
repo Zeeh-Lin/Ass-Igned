@@ -28,6 +28,13 @@ int aic_init(void);
 char* aic_call(const char *prompt);
 
 /**
+ * @brief Builds the AI prompt string for task addition by safely inserting the task_input into the template.
+ * * @param task_input The user's task description string (char*).
+ * @return A dynamically allocated string containing the full prompt. The caller is responsible for freeing the returned string using free(). Returns NULL on failure.
+ */
+char* aic_task_add_prompt(const char *task_input);
+
+/**
  * @brief Releases all resources used by the AI client.
  */
 void aic_cleanup(void);
