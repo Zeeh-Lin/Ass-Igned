@@ -25,11 +25,11 @@ static char* rl_gets() {
     line_read = NULL;
   }
 
-  line_read = readline("(ass) ");
+  line_read = readline(ANSI_FMT("(ass) ", ANSI_FG_GREEN));
 
   if (line_read && *line_read) {
     add_history(line_read);
-    log_write("(ass) %s\n", line_read);
+    log_write(ANSI_FMT("(ass) ", ANSI_FG_GREEN) "%s\n", line_read);
   }
 
   return line_read;
