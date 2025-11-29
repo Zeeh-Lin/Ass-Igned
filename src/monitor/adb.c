@@ -4,8 +4,11 @@
 #include "adb.h"
 #include "ai_client.h"
 
+static int cmd_dispatch(cmd_t *subcmd_table, int NR_SUBCMD, char *args);
 static int cmd_help(char *args);
 static int cmd_q(char *args);
+static int cmd_task(char *args);
+static int subcmd_task_add(char *args);
 static int cmd_ai(char *args);
 static int subcmd_ai_chat(char *args);
 // static int cmd_rpt(char *args);
@@ -16,6 +19,24 @@ static int subcmd_ai_chat(char *args);
 // static int cmd_ls(char *args);
 // static int cmd_info(char *args);
 // static int cmd_next(char *args);
+
+static cmd_t cmd_table [] = {
+  { "help", "Display information about all supported commands", cmd_help },
+  { "q", "Quit Ass-Igned", cmd_q },
+  { "task", "Basic task commands", cmd_task },
+  { "ai", "Basic AI commands", cmd_ai }
+};
+
+static cmd_t subcmd_task_table [] = {
+  { "add", "Add a task", subcmd_task_add }
+};
+
+static cmd_t subcmd_ai_table [] = {
+  { "chat", "Chat with AI", subcmd_ai_chat }
+};
+
+#define NR_CMD         ARRLEN(cmd_table)
+#define NR_SUBCMD(x)   ARRLEN(subcmd_ ## x ## _table)
 
 static char* rl_gets() {
   static char *line_read = NULL;
@@ -34,19 +55,6 @@ static char* rl_gets() {
 
   return line_read;
 }
-
-static cmd_t cmd_table [] = {
-  { "help", "Display information about all supported commands", cmd_help },
-  { "q", "Quit Ass-Igned", cmd_q },
-  { "ai", "Basic AI Commands", cmd_ai }
-};
-
-static cmd_t subcmd_ai_table [] = {
-  { "chat", "Chat with AI", subcmd_ai_chat }
-};
-
-#define NR_CMD ARRLEN(cmd_table)
-#define NR_SUBCMD_AI ARRLEN(subcmd_ai_table)
 
 static int cmd_help(char *args) {
   /* extract the first argument */
@@ -76,20 +84,20 @@ static int cmd_q(char *args) {
   return -1;
 }
 
-static int cmd_ai(char *args) {
+static int cmd_dispatch(cmd_t *subcmd_table, int NR_SUBCMD, char *args) {
   char *subcmd = strtok(NULL, " ");
   int i;
 
   if (subcmd == NULL) {
-    for (i = 0; i < NR_SUBCMD_AI; i ++) {
-      _Log("%s - %s\n", subcmd_ai_table[i].name, subcmd_ai_table[i].description);
+    for (i = 0; i < NR_SUBCMD; i ++) {
+      _Log("%s - %s\n", subcmd_table[i].name, subcmd_table[i].description);
     }
   }
   else {
     char *subcmd_args = subcmd + strlen(subcmd) + 1;
-    for (i = 0; i < NR_SUBCMD_AI; i ++) {
-      if (strcmp(subcmd, subcmd_ai_table[i].name) == 0) {
-        if (subcmd_ai_table[i].handler(subcmd_args) != 0) {
+    for (i = 0; i < NR_SUBCMD; i ++) {
+      if (strcmp(subcmd, subcmd_table[i].name) == 0) {
+        if (subcmd_table[i].handler(subcmd_args) != 0) {
           Log("info %s ERROR.", args);
           return 0;
         }
@@ -97,10 +105,33 @@ static int cmd_ai(char *args) {
       }
     }
 
-    if (i == NR_SUBCMD_AI) { _Log("Unknown subcommand '%s'\n", subcmd); }
+    if (i == NR_SUBCMD) { _Log("Unknown subcommand '%s'\n", subcmd); }
   }
 
   return 0;
+}
+
+static int cmd_task(char *args) {
+  return cmd_dispatch(subcmd_task_table, NR_SUBCMD(task), args);
+}
+
+static int subcmd_task_add(char *args) {
+  SAFE_FREE(answer);
+
+  answer = aic_call(aic_task_add_prompt(args));
+
+  if (answer == NULL) {
+    Log("AI task add error");
+    return -1;
+  }
+  _Log("%s\n", answer);
+
+  SAFE_FREE(answer);
+  return 0;
+}
+
+static int cmd_ai(char *args) {
+  return cmd_dispatch(subcmd_ai_table, NR_SUBCMD(ai), args);
 }
 
 static int subcmd_ai_chat(char *args) {
