@@ -19,9 +19,15 @@ void log_statistic() {
   //   Log("host time spent = %ld us", g_timer);
   // else
   //   Log("Finish running in less than 1 us and can not calculate the simulation frequency");
+  Log("Finish running.");
 }
 
 bool log_enable() {
   // TODO： log when condition is true
   return true;
+}
+
+void log_close() {
+  if (log_fp != NULL)
+    fclose(log_fp);
 }

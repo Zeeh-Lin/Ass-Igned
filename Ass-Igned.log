@@ -1,3 +1,0 @@
-[1;34m[src/utils/log.c:12 log_init] Log is written to /home/zeehlin/Ass-Igned/log.txt[0m
-[1;34m[src/main.c:8 main] This is a test log message: 123[0m
-Direct log_write message: Hello log!

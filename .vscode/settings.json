@@ -1,6 +1,16 @@
 {
   "files.associations": {
+    "*.log": "ansi",
     "stdio.h": "c",
-    "assert.h": "c"
+    "assert.h": "c",
+    "common.h": "c",
+    "log.h": "c",
+    "getopt.h": "c",
+    "stdlib.h": "c",
+    "inttypes.h": "c",
+    "stdint.h": "c",
+    "cstdint": "c",
+    "monitor.h": "c",
+    "adb.h": "c"
   }
 }

@@ -4,7 +4,7 @@
 WORK_DIR  = $(shell pwd)
 BUILD_DIR = $(WORK_DIR)/build
 
-NAME      = Ass_Igned
+NAME      = ass
 BINARY    = $(BUILD_DIR)/$(NAME)
 
 INC_PATH  = $(WORK_DIR)/include
@@ -25,10 +25,18 @@ LD       = $(CC)
 # Treat warnings as errors (-Werror), Debug info (-g), Include paths
 INCLUDES = -I $(INC_PATH)
 CFLAGS  := -O2 -MMD -Wall -Werror $(INCLUDES) -g $(CFLAGS)
-LDFLAGS := -O2 $(LDFLAGS)
+LIBS     := -lreadline -ldl 
+LDFLAGS := -O2 $(LDFLAGS) $(LIBS)
+
+# Execute parameters
+ARGS    ?= -l /home/zeehlin/Ass-Igned/ass.log
+ASS_EXEC := $(BINARY) $(ARGS)
+ifdef mainargs
+ASS_EXEC  += $(mainargs)
+endif
 
 # --- Rules ---
-.PHONY: app clean
+.PHONY: app clean run
 app: $(BINARY)
 
 # Linking rule: Generates the final executable
@@ -45,6 +53,13 @@ $(OBJ_DIR)/%.o: %.c
 
 # Dependencies (automatic handling of header file changes)
 -include $(OBJS:.o=.d)
+
+# Execute app
+run: app
+	$(ASS_EXEC)
+
+gdb: app
+	gdb -s $(BINARY) --args $(ASS_EXEC)
 
 # Cleanup rule: Removes all generated build files and directories
 clean:

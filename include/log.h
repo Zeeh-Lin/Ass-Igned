@@ -66,5 +66,6 @@ extern FILE *log_fp;
 extern bool log_enable();
 extern void log_statistic();
 extern void log_init(const char *log_file);
+extern void log_close();
 
 #endif
