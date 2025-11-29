@@ -18,6 +18,14 @@ typedef int32_t  sword_t;
 #define FMT_INT  "%" PRId32
 #define FMT_UINT "%" PRIu32
 
+#define SAFE_FREE(x) \
+  do { \
+    if ((x) != NULL) { \
+      free(x); \
+      (x) = NULL; \
+    } \
+  } while(0)
+
 enum { ASS_RUNNING, ASS_STOP, ASS_END, ASS_ABORT, ASS_QUIT };
 
 typedef struct {

@@ -11,8 +11,8 @@ static char *log_file = NULL;
 
 static void welcome() {
   Log("Build time: %s, %s", __TIME__, __DATE__);
-  printf("Welcome to Ass-Igned!\n");
-  printf("For help, type \"help\"\n");
+  _Log("Welcome to Ass-Igned!\n");
+  _Log("For help, type \"help\"\n");
 }
 
 static int parse_args(int argc, char *argv[]) {
