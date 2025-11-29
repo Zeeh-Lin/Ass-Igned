@@ -9,6 +9,8 @@ BINARY    = $(BUILD_DIR)/$(NAME)
 INC_PATH  = $(ASS_HOME)/include
 OBJ_DIR   = $(BUILD_DIR)/obj
 
+VALGRIND_LOG = $(BUILD_DIR)/valgrind.log
+
 # --- Sources & Objects ---
 # Find all .c files recursively under the src directory
 SRCS = $(shell find src -name "*.c")
@@ -35,7 +37,7 @@ ASS_EXEC += $(mainargs)
 endif
 
 # --- Rules ---
-.PHONY: app clean run
+.PHONY: app clean run gdb valgrind
 app: $(BINARY)
 
 # Linking rule: Generates the final executable
@@ -60,7 +62,13 @@ run: app
 gdb: app
 	gdb -s $(BINARY) --args $(ASS_EXEC)
 
+# Run app with Valgrind for memory checks
+valgrind: app
+	@echo "+ Valgrind Interactive Mode (Report Log: $(VALGRIND_LOG))"
+	@mkdir -p $(BUILD_DIR)
+	valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --log-file=$(VALGRIND_LOG) $(ASS_EXEC)
+	@echo "+ Valgrind finished. Memory report saved in $(VALGRIND_LOG)."
+
 # Cleanup rule: Removes all generated build files and directories
 clean:
-	@echo "+ Clean $(BUILD_DIR)"
 	-rm -rf $(BUILD_DIR)
