@@ -1,6 +1,8 @@
-# Ass-Igned: AI助力的任务管理器
+# Ass-Igned: 基于AI解析的结构化任务管理系统
 
 > Kicks your tasks in the ass… so you don’t have to.
+
+**安徽大学集成电路学院程序设计实训**
 
 ## Dependencies
 
