@@ -8,4 +8,5 @@
 
 ``` bash
 sudo apt install libcurl4-openssl-dev
+sudo apt install sqlite3 libsqlite3-dev
 ```
