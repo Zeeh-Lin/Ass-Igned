@@ -1,7 +1,14 @@
 #ifndef __AI_CLIENT_H_
 #define __AI_CLIENT_H__
 
-#define AIC_API_KEY "***REMOVED***"
+/**
+ * Create a file called "api_key.h" in directory "include",
+ * and define your own API key as the macro "MY_API_KEY".
+ * Or you can remove this line: #include "api_key.h" ,
+ * and replace MY_API_KEY with your own api key simply.
+ */
+#include "api_key.h"
+#define AIC_API_KEY MY_API_KEY
 #define AIC_URL     "https://api.deepseek.com/chat/completions"
 #define AIC_MODEL   "deepseek-chat"
 
