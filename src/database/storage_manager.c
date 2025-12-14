@@ -74,7 +74,7 @@ static int _stg_init_db_file(db_header_t *header) {
 /**
  * @brief 初始化存储层，打开数据库文件。
  */
-int stg_init(void) {
+int stg_init(const char* db_file) {
     db_header_t header;
     long file_len = 0;
 
@@ -85,11 +85,11 @@ int stg_init(void) {
     // "w+b": Read/Write, binary mode, creates if doesn't exist, TRUNCATES if it does! (Avoid)
     
     // 最佳策略：尝试 r+b 打开，失败则 w+b 创建后立即关闭，再 r+b 打开。
-    g_db_file = fopen(DB_FILENAME, "r+b"); 
+    g_db_file = fopen(db_file, "r+b"); 
     
     if (g_db_file == NULL) {
         // 文件不存在或权限问题，尝试创建
-        g_db_file = fopen(DB_FILENAME, "w+b");
+        g_db_file = fopen(db_file, "w+b");
         if (g_db_file == NULL) {
             Log("ERROR: Can't create database file.");
             return -1;
@@ -127,7 +127,7 @@ int stg_init(void) {
 
     // 确保文件指针回到开头
     fseek(g_db_file, 0, SEEK_SET);
-
+    Log("Database file: %s", db_file);
     return 0;
 }
 

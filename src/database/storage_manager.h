@@ -39,7 +39,7 @@ extern FILE *g_db_file;
  * * If file doesn't exist, create and initialize file header and structures.
  * @return int 0 on success, -1 on failure.
  */
-int stg_init(void);
+int stg_init(const char* db_file);
 
 /**
  * @brief Close database file handle and clean up resources.

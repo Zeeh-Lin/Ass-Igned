@@ -6,10 +6,6 @@
 
 // --- MACROS ---
 
-/**
- * @brief Filename for the persistent single-file database.
- */
-#define DB_FILENAME "tasks.db" 
 // The maximum size for task title/description strings.
 #define TASK_TITLE_MAX_LEN 128
 #define TASK_DESC_MAX_LEN 256
@@ -92,7 +88,7 @@ typedef struct {
  * * It does NOT load all task data. Returns 0 if DB file is created/loaded successfully.
  * @return int 0 on success, -1 on fatal error.
  */
-int db_load_db(void);
+int db_init(const char* db_file);
 
 /**
  * @brief Saves the current memory state (indices and header) to the database file.
@@ -162,4 +158,6 @@ int db_get_task_count(void);
 void db_print_task(const task_t *task);
 void db_print_all_task();
 void db_print_header();
+char* db_get_all_tasks_json(void);
+
 #endif

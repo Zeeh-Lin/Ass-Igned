@@ -5,21 +5,19 @@
 #include "common.h"
 
 #define TIME_STR_LEN 30 // 定义时间字符串缓冲区大小
-
+#define ESTIMATED_TASK_JSON_SIZE 1024
 // --- DATABASE LIFECYCLE MANAGEMENT FUNCTIONS ---
 
 /**
  * @brief 初始化数据库。
  * * 调用索引层的初始化函数，加载文件头和索引/空闲列表到内存。
  */
-int db_load_db(void) {
-    Log("INFO: Starting database load...");
-    // idx_init handles stg_init internally and loads metadata into memory.
-    if (idx_init() != 0) {
+int db_init(const char* db_file) {
+    if (idx_init(db_file) != 0) {
         Log("FATAL: Database initialization failed at index layer.");
         return -1;
     }
-    Log("INFO: Database loaded successfully.");
+    Log("Database loaded successfully.");
     return 0;
 }
 
@@ -98,7 +96,7 @@ int db_add_task(const char *task_json) {
     // 6. 递增下一个 ID
     idx_increment_next_id();
 
-    Log("INFO: Task %d added successfully at offset %ld.", new_task.id, allocated_offset);
+    // Log("INFO: Task %d added successfully at offset %ld.", new_task.id, allocated_offset);
     return new_id;
 }
 
@@ -144,7 +142,7 @@ int db_update_task(const task_t *updated_task) {
         return -1;
     }
 
-    Log("INFO: Task %d updated successfully.", updated_task->id);
+    // Log("INFO: Task %d updated successfully.", updated_task->id);
     return 0;
 }
 
@@ -173,7 +171,7 @@ int db_delete_task_by_id(int id) {
         // 如果 Free List 已满，我们仍然认为删除是成功的，但会浪费空间。
     }
 
-    Log("INFO: Task %d deleted and space at %ld freed.", id, offset);
+    // Log("INFO: Task %d deleted and space at %ld freed.", id, offset);
     return 0;
 }
 
@@ -259,4 +257,83 @@ void db_print_all_task() {
 void db_print_header() {
     const db_header_t *header_p = idx_get_header();
     stg_print_header(header_p);
+}
+
+char* db_get_all_tasks_json() {
+    int task_count = 0;
+    const index_record_t *index_p = idx_get_index(&task_count);
+    
+    if (task_count == 0 || index_p == NULL) {
+        return strdup("[]"); 
+    }
+
+    // 1. 预估初始缓冲区大小
+    // 头部 "[", 尾部 "]", 逗号分隔符, 加上所有任务的预估大小
+    size_t initial_size = 2 + (task_count * ESTIMATED_TASK_JSON_SIZE); 
+    char *result_buffer = (char*)malloc(initial_size);
+    if (result_buffer == NULL) {
+        Log("FATAL: Memory allocation failed for JSON array buffer.");
+        return NULL;
+    }
+
+    // 初始化结果字符串为 JSON 数组的起始符号
+    strcpy(result_buffer, "[");
+    size_t current_len = 1;
+    
+    task_t task;
+    char *task_json = NULL;
+
+    // 2. 遍历所有索引记录
+    for (int i = 0; i < task_count; i++) {
+        long offset = index_p[i].offset; // 修正后的索引访问方式
+
+        // 2a. 从文件读取任务数据
+        if (stg_read_task_block(offset, &task) != 0) {
+            Log("ERROR: Failed to read task block for index %d.", i);
+            continue; // 跳过此任务
+        }
+
+        // 2b. 将 task_t 结构体序列化为单个 JSON 字符串
+        task_json = psr_task_to_json(&task);
+        if (task_json == NULL) {
+            Log("ERROR: Failed to serialize task ID %d.", task.id);
+            continue;
+        }
+
+        // 2c. 检查缓冲区是否需要扩展 (使用 realloc)
+        size_t json_len = strlen(task_json);
+        // 需要当前长度 + 新 JSON 长度 + 逗号/终止符
+        if (current_len + json_len + 2 >= initial_size) {
+            // 扩展缓冲区大小
+            initial_size += (json_len + ESTIMATED_TASK_JSON_SIZE); 
+            char *new_buffer = (char*)realloc(result_buffer, initial_size);
+            if (new_buffer == NULL) {
+                Log("FATAL: realloc failed during JSON array construction.");
+                free(result_buffer);
+                free(task_json);
+                return NULL;
+            }
+            result_buffer = new_buffer;
+        }
+
+        // 2d. 追加逗号（如果不是第一个元素）
+        if (i > 0) {
+            strcat(result_buffer, ",");
+            current_len += 1;
+        }
+
+        // 2e. 追加新的任务 JSON 字符串
+        strcat(result_buffer, task_json);
+        current_len += json_len;
+        
+        // 2f. 释放单个任务 JSON 字符串
+        free(task_json);
+        task_json = NULL;
+    }
+
+    // 3. 添加 JSON 数组的结束符号 "]"
+    strcat(result_buffer, "]");
+    
+    // 4. 返回动态分配的 JSON 数组字符串
+    return result_buffer;
 }

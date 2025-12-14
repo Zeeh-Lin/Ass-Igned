@@ -12,9 +12,9 @@ static db_header_t g_db_header_cache;
  * @brief 初始化索引管理器。
  * * 从数据库文件中读取 Header, Index Table 和 Free List 到内存。
  */
-int idx_init(void) {
+int idx_init(const char* db_file) {
     // 1. 启动底层存储（打开或创建文件）
-    if (stg_init() != 0) {
+    if (stg_init(db_file) != 0) {
         Log("ERROR: storage_manager initialization failed.");
         return -1;
     }
@@ -59,7 +59,6 @@ int idx_init(void) {
         }
     }
 
-    Log("INFO: Index manager initialized successfully.");
     return 0;
 }
 

@@ -8,7 +8,7 @@
 #include <string.h>
 #include "database.h"
 
-int idx_init(void);
+int idx_init(const char* db_file);
 void idx_shutdown(void);
 
 long idx_get_task_offset(int id);

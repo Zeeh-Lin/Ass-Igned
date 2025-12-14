@@ -30,7 +30,7 @@ LIBS     := -lreadline -ldl -lcurl
 LDFLAGS  := -O2 $(LDFLAGS) $(LIBS)
 
 # Execute parameters
-ARGS     ?= -l $(BUILD_DIR)/ass.log
+ARGS     ?= -l $(BUILD_DIR)/ass.log -d $(BUILD_DIR)/tasks.db
 ASS_EXEC := $(BINARY) $(ARGS)
 ifdef mainargs
 ASS_EXEC += $(mainargs)
