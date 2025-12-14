@@ -3,10 +3,11 @@
 #include <readline/history.h>
 #include "adb.h"
 #include "ai_client.h"
+#include "database.h"
 
 static int cmd_dispatch(cmd_t *subcmd_table, int NR_SUBCMD, char *args);
 static int cmd_help(char *args);
-static int cmd_q(char *args);
+static int cmd_quit(char *args);
 static int cmd_task(char *args);
 static int subcmd_task_add(char *args);
 static int cmd_ai(char *args);
@@ -22,7 +23,7 @@ static int subcmd_ai_chat(char *args);
 
 static cmd_t cmd_table [] = {
   { "help", "Display information about all supported commands", cmd_help },
-  { "q", "Quit Ass-Igned", cmd_q },
+  { "quit", "Quit Ass-Igned", cmd_quit },
   { "task", "Basic task commands", cmd_task },
   { "ai", "Basic AI commands", cmd_ai }
 };
@@ -79,7 +80,7 @@ static int cmd_help(char *args) {
   return 0;
 }
 
-static int cmd_q(char *args) {
+static int cmd_quit(char *args) {
   ass_state.state = ASS_QUIT;
   return -1;
 }
@@ -132,7 +133,6 @@ static int subcmd_task_add(char *args) {
     return -1;
   }
   _Log("%s\n", answer);
-
   SAFE_FREE(answer);
   free(prompt);
   return 0;
