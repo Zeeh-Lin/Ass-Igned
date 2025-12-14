@@ -13,6 +13,12 @@ static char *db_file = NULL;
 static void welcome() {
   Log("Build time: %s, %s", __TIME__, __DATE__);
   _Log("Welcome to Ass-Igned!\n");
+  _Log("     _                 ___                     _ \n");
+  _Log("    / \\   ___ ___     |_ _|__ _ _ __   ___  __| |\n");
+  _Log("   / _ \\ / __/ __|_____| |/ _` | '_ \\ / _ \\/ _` |\n");
+  _Log("  / ___ \\\\__ \\__ \\_____| | (_| | | | |  __/ (_| |\n");
+  _Log(" /_/   \\_\\___/___/    |___\\__, |_| |_|\\___|\\__,_|\n");
+  _Log("                          |___/                  \n");
   _Log("For help, type \"help\"\n");
 }
 
@@ -44,7 +50,6 @@ void monitor_init(int argc, char *argv[]) {
   adb_init();
   Assert(aic_init() == 0, "AI Client init error.");
   db_init(db_file);
-  db_print_header();
   welcome();
 }
 

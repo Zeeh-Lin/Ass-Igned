@@ -149,7 +149,7 @@ static int subcmd_task_add(char *args) {
     Log("AI task add error");
     return -1;
   }
-  
+  printf("%s\n", answer);
   db_add_task(answer);
 
   SAFE_FREE(answer);
@@ -190,98 +190,111 @@ static int subcmd_task_del(char *args) {
 }
 
 static int subcmd_task_update(char *args) {
-  // args should look like: "<task_id> <update_instruction>"
-  
-  char *id_str = strtok(args, " ");
-  if (id_str == NULL) {
-    _Log("Error: Missing task ID.\n");
-    return -1;
-  }
-
-  int id = atoi(id_str);
-  if (id <= 0) {
-    _Log("Error: Invalid task ID '%s'.\n", id_str);
-    return -1;
-  }
+    // args should look like: "<task_id> <update_instruction>"
     
-  char *instruction = id_str + strlen(id_str) + 1;
-  if (instruction == NULL || *instruction == '\0') {
-    _Log("Error: Missing update instruction.\n");
-    return -1;
-  }
+    char *id_str = strtok(args, " ");
+    if (id_str == NULL) {
+        _Log("Error: Missing task ID.\n");
+        return -1;
+    }
 
-  task_t old_task;
-  char *old_task_json = NULL;
-  char *prompt = NULL;
+    int id = atoi(id_str);
+    if (id <= 0) {
+        _Log("Error: Invalid task ID '%s'.\n", id_str);
+        return -1;
+    }
+        
+    char *instruction = id_str + strlen(id_str) + 1;
+    if (instruction == NULL || *instruction == '\0') {
+        _Log("Error: Missing update instruction.\n");
+        return -1;
+    }
 
-  if (db_find_task_by_id(id, &old_task) != 0) {
-    _Log("Error: Task ID %d not found. Update failed.\n", id);
-    return -1;
-  }
+    task_t old_task;
+    char *old_task_json = NULL;
+    char *prompt = NULL;
+
+    // --- 1. Find the old task and handle errors ---
+    if (db_find_task_by_id(id, &old_task) != 0) {
+        _Log("Error: Task ID %d not found. Update failed.\n", id);
+        return -1;
+    }
+        
+    old_task_json = psr_task_to_json(&old_task); 
+    if (old_task_json == NULL) {
+        Log("Error: Failed to serialize task ID %d to JSON.", id);
+        return -1; // Cannot continue without JSON context
+    }
+
+    // --- 2. Call AI and get the complete modified JSON ---
+    SAFE_FREE(answer);
     
-  old_task_json = psr_task_to_json(&old_task); 
-  if (old_task_json == NULL) {
-    Log("Error: Failed to serialize task ID %d to JSON.", id);
-    return -1; // Cannot continue without JSON context
-  }
-
-  SAFE_FREE(answer);
-  
-  prompt = aic_task_update_prompt(old_task_json, instruction); 
-  
-  if (prompt == NULL) {
-    Log("Failed to build update prompt for ID %d", id);
-    SAFE_FREE(old_task_json);
-    return -1;
-  }
-
-  answer = aic_call(prompt);
-
-  if (answer == NULL) {
-    Log("AI task update error (returned NULL).");
-    SAFE_FREE(old_task_json);
-    free(prompt);
-    return -1;
-  }
-  
-  // AI is instructed to return the COMPLETE, MODIFIED task JSON.
-  // We use psr_json_to_task to overwrite 'old_task' with the new data.
-  task_t new_task;
+    // Pass old_task.created_at for robust prompt generation (AI knows to preserve it)
+    prompt = aic_task_update_prompt(old_task_json, instruction, old_task.created_at); 
     
-  // We pass require_id=1 to ensure the AI's output contains a valid ID 
-  // (which should be the original ID).
-  if (psr_json_to_task(answer, &new_task, 1) != 0) {
-    Log("Error: AI returned invalid JSON or ID was missing/invalid.");
-    Log("Bad JSON from AI: %s\n", answer); 
+    if (prompt == NULL) {
+        Log("Failed to build update prompt for ID %d", id);
+        SAFE_FREE(old_task_json);
+        return -1;
+    }
+
+    answer = aic_call(prompt);
+
+    if (answer == NULL) {
+        Log("AI task update error (returned NULL).");
+        SAFE_FREE(old_task_json);
+        free(prompt);
+        return -1;
+    }
+    
+    // --- 3. Data Integrity and Parsing (CRITICAL SECTION) ---
+
+    // 3a. Preserve immutable data before parsing, in case psr_json_to_task 
+    //     clears the struct or AI's JSON omits the field.
+    time_t preserved_created_at = old_task.created_at; 
+    
+    task_t new_task;
+
+    // 3b. Parse the COMPLETE JSON returned by the AI into the new_task structure.
+    if (psr_json_to_task(answer, &new_task, 1) != 0) {
+        Log("Error: AI returned invalid JSON or ID was missing/invalid.");
+        Log("Bad JSON from AI: %s\n", answer); 
+        SAFE_FREE(answer);
+        SAFE_FREE(old_task_json);
+        free(prompt);
+        return -1;
+    }
+
+    // 3c. Crucial check: Ensure AI did not change the ID
+    if (new_task.id != id) {
+        _Log("FATAL ERROR: AI returned JSON with changed ID (%d -> %d). Aborting update.\n", id, new_task.id);
+        SAFE_FREE(answer);
+        SAFE_FREE(old_task_json);
+        free(prompt);
+        return -1;
+    }
+    
+    // 3d. Restore the immutable 'created_at' timestamp. 
+    //     This guarantees data integrity regardless of how psr_json_to_task handled the field.
+    new_task.created_at = preserved_created_at;
+
+    // --- 4. Update Database and Cleanup ---
+    if (db_update_task(&new_task) != 0) {
+        Log("Update failed. Database write error for ID %d.\n", id);
+        SAFE_FREE(answer);
+        SAFE_FREE(old_task_json);
+        free(prompt);
+        return -1;
+    }
+    
+    // Print success logs
+    Log("%s", answer);
+    Log("Task ID %d updated successfully based on instruction: '%s'.", id, instruction);
+
     SAFE_FREE(answer);
     SAFE_FREE(old_task_json);
     free(prompt);
-    return -1;
-  }
-
-  // Crucial check: Ensure AI did not change the ID
-  if (new_task.id != id) {
-    _Log("FATAL ERROR: AI returned JSON with changed ID (%d -> %d). Aborting update.\n", id, new_task.id);
-    SAFE_FREE(answer);
-    SAFE_FREE(old_task_json);
-    free(prompt);
-    return -1;
-  }
-
-  if (db_update_task(&new_task) != 0) {
-    Log("Update failed. Database write error for ID %d.\n", id);
-    SAFE_FREE(answer);
-    SAFE_FREE(old_task_json);
-    free(prompt);
-    return -1;
-  }
-
-  Log("Task ID %d updated successfully based on instruction: '%s'.", id, instruction);
-
-  SAFE_FREE(answer);
-  SAFE_FREE(old_task_json);
-  free(prompt);
-  return 0;
+    return 0;
 }
 
 static int cmd_ai(char *args) {
