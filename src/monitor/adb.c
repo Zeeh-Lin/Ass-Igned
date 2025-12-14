@@ -352,12 +352,48 @@ static int cmd_report(char *args) {
   return cmd_dispatch(subcmd_report_table, ARRLEN(subcmd_report_table), args);
 }
 
+static int generate_report(const char *report_type) {
+    char *task_list_json = db_get_all_tasks_json(); 
+
+    if (task_list_json == NULL || strcmp(task_list_json, "[]") == 0) {
+        _Log("INFO: No tasks to generate %s report.\n", report_type);
+        SAFE_FREE(task_list_json); 
+        return 0;
+    }
+    
+    SAFE_FREE(answer);
+    char *prompt = aic_report_prompt(task_list_json, report_type); 
+    
+    if (prompt == NULL) {
+        Log("Failed to build %s report prompt.", report_type);
+        SAFE_FREE(task_list_json);
+        return -1;
+    }
+
+    _Log("INFO: Generating %s report...\n", report_type);
+    answer = aic_call(prompt);
+
+    if (answer == NULL) {
+        Log("AI report generation error for %s.", report_type);
+        SAFE_FREE(prompt);
+        SAFE_FREE(task_list_json);
+        return -1;
+    }
+    
+    _Log("\n=== %s Report ===\n%s\n", report_type, answer);
+
+    SAFE_FREE(answer);
+    SAFE_FREE(prompt);
+    SAFE_FREE(task_list_json);
+    return 0;
+}
+
 static int subcmd_report_w(char *args) {
-  return 0;
+  return generate_report("WEEKLY");
 }
 
 static int subcmd_report_m(char *args) {
-  return 0;
+  return generate_report("MONTHLY");
 }
 
 void adb_mainloop() {

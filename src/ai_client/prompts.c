@@ -164,3 +164,52 @@ char* aic_task_suggest_prompt(const char *task_list_json) {
 
     return full_prompt;
 }
+
+
+static const char *REPORT_PROMPT_TEMPLATE =
+    "You are an expert project management assistant specializing in generating comprehensive reports based on raw task data. Your goal is to generate a professional, structured **%s REPORT**.\n\n" // %s: WEEKLY or MONTHLY
+    "### Current Time Context\n"
+    "The current system date is: %ld (Unix Timestamp). Use this to identify tasks relevant to the reporting period.\n\n"
+    "### Task Data (JSON Array)\n"
+    "%s\n\n" // %s: task_list_json
+    "### Report Requirements\n"
+    "Based on the provided task data, generate a summary covering the following points. Focus the analysis on tasks that were **active, created, or completed** within the relevant reporting period (last 7 days for WEEKLY, last 30 days for MONTHLY):\n"
+    "1. **Summary of Completion**: Total number of tasks completed (`DONE`).\n"
+    "2. **Progress Analysis**: List of key tasks completed and their impact.\n"
+    "3. **Pending Tasks**: List of critical tasks (`URGENT`/`IMPORTANT` and `TODO`/`DOING`) pending completion, noting their original due dates.\n"
+    "4. **Priority Breakdown**: Distribution of tasks by priority level (0 to 3).\n"
+    "5. **Format**: The output MUST be a well-formatted, easy-to-read text summary using markdown headings and bullet points, without any additional JSON or code block markers (like ```markdown).\n\n"
+    "### Expected Output (Structured Text Report)\n";
+
+char* aic_report_prompt(const char *task_list_json, const char *report_type) {
+    if (!task_list_json || !report_type) {
+        return NULL;
+    }
+
+    time_t current_time = time(NULL); 
+    
+    size_t template_len = strlen(REPORT_PROMPT_TEMPLATE);
+    size_t json_len = strlen(task_list_json);
+    size_t type_len = strlen(report_type);
+    
+    // Generous estimation: template + JSON + report type + timestamp string + buffer
+    size_t required_len = template_len + json_len + type_len + 20 + 256 + 1; 
+    
+    char *full_prompt = (char*)malloc(required_len);
+    if (full_prompt == NULL) {
+        return NULL; // Memory allocation failure
+    }
+
+    int written = snprintf(full_prompt, required_len, 
+                           REPORT_PROMPT_TEMPLATE, 
+                           report_type,                  // %s (Report Type)
+                           (long)current_time,           // %ld (Unix Timestamp)
+                           task_list_json);              // %s (Task List JSON)
+
+    if (written < 0 || (size_t)written >= required_len) {
+        free(full_prompt);
+        return NULL;
+    }
+
+    return full_prompt;
+}

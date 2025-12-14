@@ -37,6 +37,8 @@ char* aic_call(const char *prompt);
 char* aic_task_add_prompt(const char *task_input);
 char* aic_task_update_prompt(const char *current_task_json, const char *instruction);
 char* aic_task_suggest_prompt(const char *task_list_json);
+char* aic_report_prompt(const char *task_list_json, const char *report_type);
+
 /**
  * @brief Releases all resources used by the AI client.
  */
